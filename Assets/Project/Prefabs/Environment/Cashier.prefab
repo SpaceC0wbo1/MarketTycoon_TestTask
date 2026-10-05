@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7293158641592712835
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2814139039071985401}
+  m_Layer: 0
+  m_Name: PaymentStandPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2814139039071985401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7293158641592712835}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.38268343, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 1, y: 0, z: -0.475}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3346209106369610625}
+  m_LocalEulerAnglesHint: {x: 0, y: -45, z: 0}
 --- !u!1 &7680560458037942360
 GameObject:
   m_ObjectHideFlags: 0
@@ -9,6 +40,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3346209106369610625}
+  - component: {fileID: 1346558119628233114}
+  - component: {fileID: 1090563126466347225}
+  - component: {fileID: 5177866255105500586}
   m_Layer: 0
   m_Name: Cashier
   m_TagString: Untagged
@@ -31,8 +65,60 @@ Transform:
   m_Children:
   - {fileID: 8990189635919952941}
   - {fileID: 5985393500103567763}
+  - {fileID: 2814139039071985401}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1346558119628233114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7680560458037942360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bed5e9ecca9f7042b46e58bb096414e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MarketTycoon.Gameplay.Checkout.CheckoutView
+  _config: {fileID: 11400000, guid: 5c9a5b9154db8e04e93e5f1eab3e5ff2, type: 2}
+  _paymentStandPoint: {fileID: 2814139039071985401}
+--- !u!65 &1090563126466347225
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7680560458037942360}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0.35, y: 0, z: 0.25}
+--- !u!208 &5177866255105500586
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7680560458037942360}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0.35, y: 0, z: 0.25}
+  m_TimeToStationary: 0.5
 --- !u!1001 &759600379359198089
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -43,7 +129,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5967576839141345440, guid: 111a22f459488134ea2aca19497d8251, type: 3}
       propertyPath: m_Name
-      value: CusomerCharacter (1)
+      value: CusomerCharacter
       objectReference: {fileID: 0}
     - target: {fileID: 6456691990811513370, guid: 111a22f459488134ea2aca19497d8251, type: 3}
       propertyPath: m_LocalPosition.x
@@ -85,7 +171,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 684349832679140587, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+    - {fileID: 5249419458680449080, guid: 111a22f459488134ea2aca19497d8251, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
