@@ -1,11 +1,12 @@
+using System.Collections.Generic;
 using MarketTycoon.Core.Currency;
+using MarketTycoon.Gameplay;
 using MarketTycoon.Gameplay.AI;
+using MarketTycoon.Gameplay.Building;
 using MarketTycoon.Gameplay.Checkout;
 using MarketTycoon.Gameplay.Shelf;
 using MarketTycoon.UI;
-using System.Runtime.CompilerServices;
 using UnityEngine;
-using UnityEngine.Rendering.VirtualTexturing;
 
 namespace MarketTycoon.Core.Bootstrap
 {
@@ -17,14 +18,18 @@ namespace MarketTycoon.Core.Bootstrap
         [SerializeField] private CheckoutView _initialCheckoutView;
 
         [Header("Systems")]
+        [SerializeField] private MarketRegistry _marketRegistry;
         [SerializeField] private CustomerSpawner _customerSpawner;
 
+        [Header("Building Spots")]
+        [SerializeField] private List<BuildingSpotController> _buildingSpots = new List<BuildingSpotController>();
+
         [Header("Configuration")]
-        [SerializeField] private int _initialBalance = 100;
+        [SerializeField] private int _initialBalance = 250;
 
         private CurrencyController _currencyController;
-        private ShelfController _shelfController;
-        private CheckoutController _checkoutController;
+        private ShelfController _initialShelfController;
+        private CheckoutController _initialCheckoutController;
 
         public ICurrencyService CurrencyService => _currencyController;
         public static GameBootstrap Instance { get; private set; }
@@ -36,74 +41,79 @@ namespace MarketTycoon.Core.Bootstrap
                 Destroy(gameObject);
                 return;
             }
-
             Instance = this;
 
             InitializeGame();
         }
 
-        private void InitializeGame() 
+        private void InitializeGame()
         {
-            // Currency MVC
+            // 1. Currency MVC
             var currencyModel = new CurrencyModel(_initialBalance);
             _currencyController = new CurrencyController(currencyModel, _currencyView);
-            Debug.Log($"[GameBootstrap] Currency system initialized. Starting balance: {_initialBalance} ");
 
-            //Shelf MVC
-            if(_initialShelfView != null && _initialShelfView.Config != null)
+            // 2. Initial Shelf MVC
+            if (_initialShelfView != null && _initialShelfView.Config != null)
             {
                 var shelfModel = new ShelfModel(_initialShelfView.Config);
-                _shelfController = new ShelfController(shelfModel, _initialShelfView);
-            }
-            else
-            {
-                Debug.LogError("[GameBootstrap] ShelfView or ShelfConfigSO is missing!");
+                _initialShelfController = new ShelfController(shelfModel, _initialShelfView);
+                _marketRegistry.RegisterShelf(_initialShelfController);
             }
 
-            //Checkout MVC
+            // 3. Initial Checkout MVC
             if (_initialCheckoutView != null && _initialCheckoutView.Config != null)
             {
                 var checkoutModel = new CheckoutModel(_initialCheckoutView.Config);
-                _checkoutController = new CheckoutController(checkoutModel, _initialCheckoutView, _currencyController);
-            }
-            else
-            {
-                Debug.LogError("[GameBootstrap] CheckoutView or CheckoutConfigSO is missing!");
+                _initialCheckoutController = new CheckoutController(checkoutModel, _initialCheckoutView, _currencyController);
+                _marketRegistry.RegisterCheckout(_initialCheckoutController);
             }
 
-            //AI Spawner
-            if(_customerSpawner != null && _shelfController != null && _checkoutController != null)
+            // 4. Initialization of building spots
+            foreach (var spot in _buildingSpots)
             {
-                _customerSpawner.Initialize(_shelfController, _checkoutController);
+                if (spot != null && spot.View != null && spot.View.Config != null)
+                {
+                    var spotModel = new BuildingSpotModel(spot.View.Config, false);
+                    spot.Initialize(spotModel, _currencyController, HandleSpotBuilt);
+                }
             }
 
-            Debug.Log("[GameBootstrap] Systems have been successfully initialised via ScriptableObjects.");
+            // 5. Customer Spawner
+            if (_customerSpawner != null)
+            {
+                _customerSpawner.Initialize(_marketRegistry);
+            }
+
+            Debug.Log("[GameBootstrap] Initialization with Building System completed.");
+        }
+
+        private void HandleSpotBuilt(BuildingSpotController spot)
+        {
+            Debug.Log($"[GameBootstrap] Споруду '{spot.Model.Title}' побудовано!");
+
+            // If a shelf has been assembled, we register it in the customer system
+            var shelfView = spot.View.GetComponentInChildren<ShelfView>(true);
+            if (shelfView != null && shelfView.Config != null)
+            {
+                var newShelfModel = new ShelfModel(shelfView.Config);
+                var newShelfController = new ShelfController(newShelfModel, shelfView);
+                _marketRegistry.RegisterShelf(newShelfController);
+            }
+
+            // If a new cash desk has been set up
+            var checkoutView = spot.View.GetComponentInChildren<CheckoutView>(true);
+            if (checkoutView != null && checkoutView.Config != null)
+            {
+                var newCheckoutModel = new CheckoutModel(checkoutView.Config);
+                var newCheckoutController = new CheckoutController(newCheckoutModel, checkoutView, _currencyController);
+                _marketRegistry.RegisterCheckout(newCheckoutController);
+            }
         }
 
         private void OnDestroy()
         {
             _currencyController?.Dispose();
-            _shelfController?.Dispose();
+            _initialShelfController?.Dispose();
         }
-
-        #region Debug Context Menu
-
-        [ContextMenu("Debug: Add 50 money")]
-        public void DebugAddMoney()
-        {
-            _currencyController?.Add(50);
-        }
-
-        [ContextMenu("Debug: Spend 30 money")]
-        public void DebugSpendMoney()
-        {
-            _currencyController?.TrySpend(30);
-        }
-
-        #endregion
     }
 }
-
-
-
-

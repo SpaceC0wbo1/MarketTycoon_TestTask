@@ -1,6 +1,4 @@
 using System.Collections;
-using MarketTycoon.Gameplay.Checkout;
-using MarketTycoon.Gameplay.Shelf;
 using UnityEngine;
 
 namespace MarketTycoon.Gameplay.AI
@@ -15,14 +13,12 @@ namespace MarketTycoon.Gameplay.AI
         [Header("Interval")]
         [SerializeField] private float _spawnInterval = 3.5f;
 
-        private ShelfController _shelfController;
-        private CheckoutController _checkoutController;
+        private MarketRegistry _marketRegistry;
         private Coroutine _spawnRoutine;
 
-        public void Initialize(ShelfController shelf, CheckoutController checkout)
+        public void Initialize(MarketRegistry registry)
         {
-            _shelfController = shelf;
-            _checkoutController = checkout;
+            _marketRegistry = registry;
 
             if (_spawnRoutine != null)
             {
@@ -42,22 +38,26 @@ namespace MarketTycoon.Gameplay.AI
 
         private void SpawnCustomer()
         {
-            if (_customerPrefab == null || _spawnPoint == null) return;
+            if (_customerPrefab == null || _spawnPoint == null || _marketRegistry == null) return;
+
+            var targetShelf = _marketRegistry.GetRandomAvailableShelf();
+            var targetCheckout = _marketRegistry.GetLessBusyCheckout();
+
+            if (targetShelf == null || targetCheckout == null) return;
 
             GameObject customerInstance = Instantiate(_customerPrefab, _spawnPoint.position, _spawnPoint.rotation);
             CustomerView view = customerInstance.GetComponent<CustomerView>();
             CustomerController controller = customerInstance.AddComponent<CustomerController>();
 
-            controller.Initialize(view, _shelfController, _checkoutController, _exitPoint);
+            controller.Initialize(view, targetShelf, targetCheckout, _exitPoint);
         }
 
         private void OnDestroy()
         {
             if (_spawnRoutine != null)
             {
-                StopCoroutine (_spawnRoutine);
+                StopCoroutine(_spawnRoutine);
             }
         }
     }
 }
-

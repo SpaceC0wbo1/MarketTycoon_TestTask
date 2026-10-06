@@ -6039,7 +6039,9 @@ MonoBehaviour:
   _currencyView: {fileID: 1263085539}
   _initialShelfView: {fileID: 1348085153947795483}
   _initialCheckoutView: {fileID: 1010531781038080164}
+  _marketRegistry: {fileID: 0}
   _customerSpawner: {fileID: 909813416}
+  _buildingSpots: []
   _initialBalance: 100
 --- !u!1001 &380866113
 PrefabInstance:
@@ -24200,10 +24202,14 @@ MonoBehaviour:
   _resetKey: 102
   _focusTarget: {fileID: 0}
   _enableDrag: 1
-  _zoomSpeed: 8
+  _dragSensitivity: 0.025
+  _enableEdgeScrolling: 1
+  _edgeScrollSpeed: 14
+  _edgeBorderThickness: 20
+  _zoomSensitivity: 4
   _minHeight: 4
   _maxHeight: 35
-  _smoothFactor: 12
+  _smoothTime: 0.08
 --- !u!1001 &1554328639
 PrefabInstance:
   m_ObjectHideFlags: 0
