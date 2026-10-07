@@ -38,12 +38,26 @@ namespace MarketTycoon.Gameplay.AI
 
         private void SpawnCustomer()
         {
-            if (_customerPrefab == null || _spawnPoint == null || _marketRegistry == null) return;
+            if (_customerPrefab == null || _spawnPoint == null || _marketRegistry == null)
+            {
+                Debug.LogWarning("[CustomerSpawner] Prefab, SpawnPoint, or Registry is missing!");
+                return;
+            }
 
             var targetShelf = _marketRegistry.GetRandomAvailableShelf();
             var targetCheckout = _marketRegistry.GetLessBusyCheckout();
 
-            if (targetShelf == null || targetCheckout == null) return;
+            if (targetShelf == null)
+            {
+                Debug.LogWarning("[CustomerSpawner] Cannot spawn customer: No active shelves registered in MarketRegistry!");
+                return;
+            }
+
+            if (targetCheckout == null)
+            {
+                Debug.LogWarning("[CustomerSpawner] Cannot spawn customer: No checkouts registered in MarketRegistry!");
+                return;
+            }
 
             GameObject customerInstance = Instantiate(_customerPrefab, _spawnPoint.position, _spawnPoint.rotation);
             CustomerView view = customerInstance.GetComponent<CustomerView>();

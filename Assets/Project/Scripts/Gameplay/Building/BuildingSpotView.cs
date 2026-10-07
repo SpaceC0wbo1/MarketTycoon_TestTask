@@ -1,8 +1,10 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
 namespace MarketTycoon.Gameplay.Building
 {
+
     [RequireComponent(typeof(Collider))]
     public class BuildingSpotView : MonoBehaviour
     {
@@ -10,15 +12,19 @@ namespace MarketTycoon.Gameplay.Building
         [SerializeField] private BuildingConfigSO _config;
 
         [Header("UI & Visual Elements")]
+        [Tooltip("Floor marker / construction bounds that should be visible only before construction.")]
         [SerializeField] private GameObject _constructionZoneVisual;
+
+        [Tooltip("World-space TMP text displaying construction cost.")]
         [SerializeField] private TMP_Text _costText;
+
+        [Tooltip("The actual shelf / cashier structure activated after construction.")]
         [SerializeField] private GameObject _objectToActivate;
 
         public BuildingConfigSO Config => _config;
 
-        private void Awake()
+        public void SetupCostDisplay()
         {
-            UpdateVisuals(false);
             if (_costText != null && _config != null)
             {
                 _costText.text = $"${_config.BuildCost}";
@@ -27,6 +33,9 @@ namespace MarketTycoon.Gameplay.Building
 
         public void UpdateVisuals(bool isBuilt)
         {
+            SetupCostDisplay();
+
+            // Disable construction visuals and price label if already built
             if (_constructionZoneVisual != null)
             {
                 _constructionZoneVisual.SetActive(!isBuilt);
@@ -37,16 +46,17 @@ namespace MarketTycoon.Gameplay.Building
                 _costText.gameObject.SetActive(!isBuilt);
             }
 
+            // Ensure the main structure is active when built, or hidden when pending build
             if (_objectToActivate != null)
             {
                 _objectToActivate.SetActive(isBuilt);
             }
 
-
-            var col = GetComponent<Collider>();
-            if (col != null)
+            // Disable interaction collider once built so it can no longer be clicked
+            var spotCollider = GetComponent<Collider>();
+            if (spotCollider != null)
             {
-                col.enabled = !isBuilt;
+                spotCollider.enabled = !isBuilt;
             }
         }
 
@@ -58,9 +68,9 @@ namespace MarketTycoon.Gameplay.Building
             }
         }
 
-        private System.Collections.IEnumerator PopScaleRoutine(Transform targetTransform)
+        private IEnumerator PopScaleRoutine(Transform targetTransform)
         {
-            Vector3 targetScale = targetTransform.localScale;
+            Vector3 originalScale = targetTransform.localScale;
             targetTransform.localScale = Vector3.zero;
 
             float elapsed = 0f;
@@ -70,12 +80,12 @@ namespace MarketTycoon.Gameplay.Building
             {
                 elapsed += Time.deltaTime;
                 float progress = elapsed / duration;
-                float scaleMod = Mathf.Sin(progress * Mathf.PI * 0.5f);
-                targetTransform.localScale = targetScale * scaleMod;
+                float scaleMultiplier = Mathf.Sin(progress * Mathf.PI * 0.5f);
+                targetTransform.localScale = originalScale * scaleMultiplier;
                 yield return null;
             }
 
-            targetTransform.localScale = targetScale;
+            targetTransform.localScale = originalScale;
         }
     }
 }
