@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.IO;
 using MarketTycoon.Core.Currency;
+using MarketTycoon.Core.SaveSystem;
 using MarketTycoon.Gameplay;
 using MarketTycoon.Gameplay.AI;
 using MarketTycoon.Gameplay.Building;
@@ -12,26 +14,30 @@ namespace MarketTycoon.Core.Bootstrap
 {
     public class GameBootstrap : MonoBehaviour
     {
-        [Header("Views")]
-        [SerializeField] private CurrencyView _currencyView;
-        [Tooltip("The main cashier counter if not using a building spot for it")]
-        [SerializeField] private CheckoutView _initialCheckoutView;
+        public static GameBootstrap Instance { get; private set; }
 
-        [Header("Systems")]
+        [Header("Starting Economy")]
+        [SerializeField] private int _startingCurrency = 100;
+        [SerializeField] private CurrencyView _currencyView;
+
+        [Header("Scene References")]
         [SerializeField] private MarketRegistry _marketRegistry;
         [SerializeField] private CustomerSpawner _customerSpawner;
-
-        [Header("Building Spots")]
+        [SerializeField] private CheckoutView _defaultCheckoutView;
         [SerializeField] private List<BuildingSpotController> _buildingSpots = new List<BuildingSpotController>();
 
-        [Header("Configuration")]
-        [SerializeField] private int _initialBalance = 150;
+        [Header("Persistence / AutoSave")]
+        [SerializeField] private bool _enableAutoSave = true;
+        [SerializeField] private float _autoSaveInterval = 5f;
 
+        private CurrencyModel _currencyModel;
         private CurrencyController _currencyController;
-        private CheckoutController _initialCheckoutController;
+        private GameSaveData _currentSaveData;
+        private float _autoSaveTimer;
+        private bool _isInitialized = false;
 
         public ICurrencyService CurrencyService => _currencyController;
-        public static GameBootstrap Instance { get; private set; }
+        public MarketRegistry MarketRegistry => _marketRegistry;
 
         private void Awake()
         {
@@ -40,80 +46,215 @@ namespace MarketTycoon.Core.Bootstrap
                 Destroy(gameObject);
                 return;
             }
+
             Instance = this;
 
-            InitializeGame();
+            if (_marketRegistry != null)
+            {
+                _marketRegistry.ClearAll();
+            }
+
+            InitializeCoreServices();
+            InitializeDefaultCheckout();
+            InitializeBuildingSpots();
+            InitializeSaveSystem();
+
+            _isInitialized = true;
+
+            InitializeGameplayFlow();
         }
 
-        private void InitializeGame()
+        private void InitializeCoreServices()
         {
-            // 1. Currency MVC initialization
-            var currencyModel = new CurrencyModel(_initialBalance);
-            _currencyController = new CurrencyController(currencyModel, _currencyView);
-
-            // 2. Fallback: Register direct checkout counter if assigned
-            if (_initialCheckoutView != null && _initialCheckoutView.Config != null)
+            if (_currencyView == null)
             {
-                var checkoutModel = new CheckoutModel(_initialCheckoutView.Config);
-                _initialCheckoutController = new CheckoutController(checkoutModel, _initialCheckoutView, _currencyController);
-                _marketRegistry.RegisterCheckout(_initialCheckoutController);
-                Debug.Log("[GameBootstrap] Initial checkout successfully registered.");
+                _currencyView = FindFirstObjectByType<CurrencyView>();
             }
 
-            // 3. Initialize building spots
+            _currencyModel = new CurrencyModel();
+            _currencyController = new CurrencyController(_currencyModel, _currencyView);
+        }
+
+        private void InitializeDefaultCheckout()
+        {
+            if (_defaultCheckoutView == null)
+            {
+                _defaultCheckoutView = FindFirstObjectByType<CheckoutView>();
+            }
+
+            if (_defaultCheckoutView != null && _defaultCheckoutView.Config != null)
+            {
+                var checkoutModel = new CheckoutModel(_defaultCheckoutView.Config);
+                var checkoutController = new CheckoutController(checkoutModel, _defaultCheckoutView, _currencyController);
+                _marketRegistry.RegisterCheckout(checkoutController);
+            }
+        }
+
+        private void InitializeBuildingSpots()
+        {
             foreach (var spot in _buildingSpots)
             {
-                if (spot != null && spot.View != null && spot.View.Config != null)
+                if (spot == null || spot.View == null || spot.View.Config == null) continue;
+
+                var model = new BuildingSpotModel(spot.View.Config, spot.InitiallyBuilt);
+                spot.Initialize(model, _currencyController, HandleSpotBuilt);
+
+                if (spot.InitiallyBuilt)
                 {
-                    var spotModel = new BuildingSpotModel(spot.View.Config, spot.InitiallyBuilt);
-                    spot.Initialize(spotModel, _currencyController, HandleSpotBuilt);
+                    RegisterBuiltSpotServices(spot);
                 }
             }
+        }
 
-            // 4. Start Customer Spawner loop
-            if (_customerSpawner != null)
+        private void InitializeSaveSystem()
+        {
+            string savePath = Path.Combine(Application.persistentDataPath, "savegame.json");
+            bool hasSaveFile = File.Exists(savePath);
+
+            _currentSaveData = SaveLoadManager.Load();
+
+            if (hasSaveFile && _currentSaveData.Money >= 0)
+            {
+                _currencyController.SetAmount(_currentSaveData.Money);
+            }
+            else
+            {
+                _currencyController.SetAmount(_startingCurrency);
+            }
+
+            if (_currencyView != null)
+            {
+                _currencyView.UpdateDisplay(_currencyController.CurrentAmount);
+            }
+
+            if (hasSaveFile && _currentSaveData.BuildingSpots != null)
+            {
+                foreach (var spot in _buildingSpots)
+                {
+                    if (spot == null || spot.View == null) continue;
+                    if (spot.InitiallyBuilt) continue;
+
+                    string spotId = spot.View.SpotId;
+                    var savedEntry = _currentSaveData.BuildingSpots.Find(s => s.SpotId == spotId);
+
+                    if (savedEntry != null && savedEntry.IsUnlocked)
+                    {
+                        spot.RestoreSavedState(true);
+                        RegisterBuiltSpotServices(spot);
+                    }
+                    else
+                    {
+                        spot.RestoreSavedState(false);
+                    }
+                }
+            }
+        }
+
+        private void InitializeGameplayFlow()
+        {
+            if (_customerSpawner != null && _marketRegistry != null)
             {
                 _customerSpawner.Initialize(_marketRegistry);
-                Debug.Log("[GameBootstrap] Customer Spawner initialized.");
             }
         }
 
         private void HandleSpotBuilt(BuildingSpotController spot)
         {
-            Debug.Log($"[GameBootstrap] Handling built spot: '{spot.Model.Title}'");
+            RegisterBuiltSpotServices(spot);
 
-            // 1. Room Expansion
+            if (_isInitialized)
+            {
+                SaveGameState();
+            }
+        }
+
+        private void RegisterBuiltSpotServices(BuildingSpotController spot)
+        {
+            if (spot == null) return;
+
             var roomExpansionView = spot.GetComponentInChildren<RoomExpansionView>(true);
             if (roomExpansionView != null)
             {
                 roomExpansionView.UnlockRoom();
-                Debug.Log("[GameBootstrap] Room Expansion unlocked!");
             }
 
-            // 2. Shelf registration
-            var shelfView = spot.GetComponentInChildren<ShelfView>(true);
-            if (shelfView != null && shelfView.Config != null)
+            if (spot.IsBuilt)
             {
-                var newShelfModel = new ShelfModel(shelfView.Config);
-                var newShelfController = new ShelfController(newShelfModel, shelfView);
-                _marketRegistry.RegisterShelf(newShelfController);
-                Debug.Log($"[GameBootstrap] Registered Shelf: '{spot.Model.Title}'");
-            }
+                var shelfView = spot.GetComponentInChildren<ShelfView>(true);
+                if (shelfView != null && shelfView.Config != null)
+                {
+                    var newShelfModel = new ShelfModel(shelfView.Config);
+                    var newShelfController = new ShelfController(newShelfModel, shelfView);
+                    _marketRegistry.RegisterShelf(newShelfController);
+                }
 
-            // 3. Checkout registration
-            var checkoutView = spot.GetComponentInChildren<CheckoutView>(true);
-            if (checkoutView != null && checkoutView.Config != null)
-            {
-                var newCheckoutModel = new CheckoutModel(checkoutView.Config);
-                var newCheckoutController = new CheckoutController(newCheckoutModel, checkoutView, _currencyController);
-                _marketRegistry.RegisterCheckout(newCheckoutController);
-                Debug.Log($"[GameBootstrap] Registered Checkout: '{spot.Model.Title}'");
+                var checkoutView = spot.GetComponentInChildren<CheckoutView>(true);
+                if (checkoutView != null && checkoutView.Config != null)
+                {
+                    var newCheckoutModel = new CheckoutModel(checkoutView.Config);
+                    var newCheckoutController = new CheckoutController(newCheckoutModel, checkoutView, _currencyController);
+                    _marketRegistry.RegisterCheckout(newCheckoutController);
+                }
             }
         }
 
-        private void OnDestroy()
+        public void SaveGameState()
         {
-            _currencyController?.Dispose();
+            if (!_isInitialized) return;
+
+            if (_currentSaveData == null)
+            {
+                _currentSaveData = new GameSaveData();
+            }
+
+            _currentSaveData.Money = _currencyController.CurrentAmount;
+            _currentSaveData.BuildingSpots.Clear();
+
+            foreach (var spot in _buildingSpots)
+            {
+                if (spot != null && spot.View != null)
+                {
+                    _currentSaveData.BuildingSpots.Add(new BuildingSpotSaveEntry
+                    {
+                        SpotId = spot.View.SpotId,
+                        IsUnlocked = spot.IsBuilt
+                    });
+                }
+            }
+
+            SaveLoadManager.Save(_currentSaveData);
+        }
+
+        private void Update()
+        {
+            if (!_enableAutoSave || !_isInitialized) return;
+
+            _autoSaveTimer += Time.deltaTime;
+            if (_autoSaveTimer >= _autoSaveInterval)
+            {
+                _autoSaveTimer = 0f;
+                SaveGameState();
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            SaveGameState();
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                SaveGameState();
+            }
+        }
+
+        [ContextMenu("Clear Game Save")]
+        public void ClearSaveForTesting()
+        {
+            SaveLoadManager.ClearSave();
+            Debug.Log("[GameBootstrap] Save file deleted.");
         }
     }
 }

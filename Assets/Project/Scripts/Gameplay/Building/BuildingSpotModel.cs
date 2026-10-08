@@ -7,10 +7,9 @@ namespace MarketTycoon.Gameplay.Building
         private readonly BuildingConfigSO _config;
         private bool _isUnlocked;
 
-        public string BuildingId => _config.BuildingId;
-        public string Title => _config.BuildingTitle;
-        public int Cost => _config.BuildCost;
-        public BuildingType Type => _config.Type;
+        public string Title => _config != null ? _config.BuildingTitle : string.Empty;
+        public int Cost => _config != null ? _config.BuildCost : 0;
+        public BuildingType Type => _config != null ? _config.Type : BuildingType.Shelf;
         public bool IsUnlocked => _isUnlocked;
 
         public event Action OnUnlocked;
@@ -28,6 +27,11 @@ namespace MarketTycoon.Gameplay.Building
             _isUnlocked = true;
             OnUnlocked?.Invoke();
             return true;
+        }
+
+        public void RestoreUnlockedState(bool isUnlocked)
+        {
+            _isUnlocked = isUnlocked;
         }
     }
 }

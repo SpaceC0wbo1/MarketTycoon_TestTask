@@ -13,7 +13,6 @@ namespace MarketTycoon.Gameplay.Building
     public class BuildingConfigSO : ScriptableObject
     {
         [Header("General")]
-        [SerializeField] private string _buildingId = "spot_shelf_02";
         [SerializeField] private string _buildingTitle = "New Bread Shelf";
         [SerializeField] private BuildingType _type = BuildingType.Shelf;
 
@@ -25,7 +24,6 @@ namespace MarketTycoon.Gameplay.Building
         [Tooltip("A prefab or a game object that becomes operational once construction is complete")]
         [SerializeField] private GameObject _constructedPrefab;
 
-        public string BuildingId => _buildingId;
         public string BuildingTitle => _buildingTitle;
         public BuildingType Type => _type;
         public int BuildCost => _buildCost;

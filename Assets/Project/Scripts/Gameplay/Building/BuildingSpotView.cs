@@ -4,10 +4,13 @@ using UnityEngine;
 
 namespace MarketTycoon.Gameplay.Building
 {
-
     [RequireComponent(typeof(Collider))]
     public class BuildingSpotView : MonoBehaviour
     {
+        [Header("Instance Identity")]
+        [Tooltip("Unique save identifier for this specific spot on scene.")]
+        [SerializeField] private string _spotId;
+
         [Header("Config")]
         [SerializeField] private BuildingConfigSO _config;
 
@@ -21,7 +24,41 @@ namespace MarketTycoon.Gameplay.Building
         [Tooltip("The actual shelf / cashier structure activated after construction.")]
         [SerializeField] private GameObject _objectToActivate;
 
+        public string SpotId => !string.IsNullOrEmpty(_spotId) ? _spotId : gameObject.name;
         public BuildingConfigSO Config => _config;
+
+        private Collider _spotCollider;
+
+        private void Awake()
+        {
+            _spotCollider = GetComponent<Collider>();
+            EnsureReferences();
+        }
+
+        private void EnsureReferences()
+        {
+            if (_spotCollider == null)
+            {
+                _spotCollider = GetComponent<Collider>();
+            }
+
+            if (_objectToActivate == null)
+            {
+                var shelfChild = GetComponentInChildren<MarketTycoon.Gameplay.Shelf.ShelfView>(true);
+                if (shelfChild != null && shelfChild.gameObject != gameObject)
+                {
+                    _objectToActivate = shelfChild.gameObject;
+                }
+                else
+                {
+                    var checkoutChild = GetComponentInChildren<MarketTycoon.Gameplay.Checkout.CheckoutView>(true);
+                    if (checkoutChild != null && checkoutChild.gameObject != gameObject)
+                    {
+                        _objectToActivate = checkoutChild.gameObject;
+                    }
+                }
+            }
+        }
 
         public void SetupCostDisplay()
         {
@@ -33,9 +70,9 @@ namespace MarketTycoon.Gameplay.Building
 
         public void UpdateVisuals(bool isBuilt)
         {
+            EnsureReferences();
             SetupCostDisplay();
 
-            // Disable construction visuals and price label if already built
             if (_constructionZoneVisual != null)
             {
                 _constructionZoneVisual.SetActive(!isBuilt);
@@ -46,31 +83,35 @@ namespace MarketTycoon.Gameplay.Building
                 _costText.gameObject.SetActive(!isBuilt);
             }
 
-            // Ensure the main structure is active when built, or hidden when pending build
             if (_objectToActivate != null)
             {
                 _objectToActivate.SetActive(isBuilt);
+
+                if (isBuilt && _objectToActivate.transform.localScale == Vector3.zero)
+                {
+                    _objectToActivate.transform.localScale = Vector3.one;
+                }
             }
 
-            // Disable interaction collider once built so it can no longer be clicked
-            var spotCollider = GetComponent<Collider>();
-            if (spotCollider != null)
+            if (_spotCollider != null)
             {
-                spotCollider.enabled = !isBuilt;
+                _spotCollider.enabled = !isBuilt;
             }
         }
 
         public void PlayBuildEffect()
         {
+            EnsureReferences();
             if (_objectToActivate != null)
             {
+                StopAllCoroutines();
                 StartCoroutine(PopScaleRoutine(_objectToActivate.transform));
             }
         }
 
         private IEnumerator PopScaleRoutine(Transform targetTransform)
         {
-            Vector3 originalScale = targetTransform.localScale;
+            Vector3 originalScale = Vector3.one;
             targetTransform.localScale = Vector3.zero;
 
             float elapsed = 0f;

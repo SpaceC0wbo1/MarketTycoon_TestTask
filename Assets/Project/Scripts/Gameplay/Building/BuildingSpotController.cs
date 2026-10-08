@@ -35,11 +35,6 @@ namespace MarketTycoon.Gameplay.Building
             {
                 _view = GetComponent<BuildingSpotView>();
             }
-
-            if (_view != null)
-            {
-                _view.UpdateVisuals(_initiallyBuilt);
-            }
         }
 
 #if UNITY_EDITOR
@@ -63,7 +58,10 @@ namespace MarketTycoon.Gameplay.Building
             _currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
             _onBuiltCallback = onBuilt;
 
-            _view.UpdateVisuals(_model.IsUnlocked);
+            if (_view != null)
+            {
+                _view.UpdateVisuals(_model.IsUnlocked);
+            }
 
             if (_model.IsUnlocked)
             {
@@ -73,7 +71,6 @@ namespace MarketTycoon.Gameplay.Building
 
         private void Update()
         {
-            // Do not process clicks if the spot is already built
             if (IsBuilt) return;
 
             if (Input.GetMouseButtonDown(0))
@@ -103,7 +100,6 @@ namespace MarketTycoon.Gameplay.Building
 
         public bool TryPurchase()
         {
-            // Fallback: Lazy auto-initialization from GameBootstrap singleton if missed in inspector list
             if (_model == null && _view != null && _view.Config != null)
             {
                 if (GameBootstrap.Instance != null)
@@ -113,33 +109,39 @@ namespace MarketTycoon.Gameplay.Building
                 }
             }
 
-            if (_model == null)
-            {
-                Debug.LogError($"[BuildingSpotController] Model is null on '{gameObject.name}'! Ensure BuildingConfigSO is assigned.");
-                return false;
-            }
-
+            if (_model == null) return false;
             if (_model.IsUnlocked) return false;
 
-            if (_currencyService == null)
-            {
-                Debug.LogError($"[BuildingSpotController] CurrencyService is missing on '{gameObject.name}'!");
-                return false;
-            }
+            if (_currencyService == null) return false;
 
             if (_currencyService.TrySpend(_model.Cost))
             {
                 _model.TryUnlock();
-                _view.UpdateVisuals(true);
-                _view.PlayBuildEffect();
+
+                if (_view != null)
+                {
+                    _view.UpdateVisuals(true);
+                    _view.PlayBuildEffect();
+                }
 
                 _onBuiltCallback?.Invoke(this);
-                Debug.Log($"[BuildingSystem] Successfully purchased '{_model.Title}' for ${_model.Cost}!");
                 return true;
             }
 
-            Debug.LogWarning($"[BuildingSystem] Insufficient funds! Needed: ${_model.Cost}, Current balance: ${_currencyService.CurrentAmount}");
             return false;
+        }
+
+        public void RestoreSavedState(bool isUnlocked)
+        {
+            if (_model != null)
+            {
+                _model.RestoreUnlockedState(isUnlocked);
+            }
+
+            if (_view != null)
+            {
+                _view.UpdateVisuals(isUnlocked);
+            }
         }
     }
 }
