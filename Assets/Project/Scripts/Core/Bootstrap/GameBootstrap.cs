@@ -2,13 +2,16 @@ using System.Collections.Generic;
 using System.IO;
 using MarketTycoon.Core.Currency;
 using MarketTycoon.Core.SaveSystem;
+using MarketTycoon.Core.Settings;
 using MarketTycoon.Gameplay;
 using MarketTycoon.Gameplay.AI;
 using MarketTycoon.Gameplay.Building;
 using MarketTycoon.Gameplay.Checkout;
 using MarketTycoon.Gameplay.Shelf;
-using MarketTycoon.UI;
+using MarketTycoon.UI.HUD;
+using MarketTycoon.UI.Settings;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace MarketTycoon.Core.Bootstrap
 {
@@ -18,7 +21,13 @@ namespace MarketTycoon.Core.Bootstrap
 
         [Header("Starting Economy")]
         [SerializeField] private int _startingCurrency = 100;
-        [SerializeField] private CurrencyView _currencyView;
+
+        [Header("UI References")]
+        [SerializeField] private GameplayHUDView _gameplayHudView;
+        [SerializeField] private SettingsView _settingsView;
+
+        [Header("Audio Settings (Optional)")]
+        [SerializeField] private AudioMixer _audioMixer;
 
         [Header("Scene References")]
         [SerializeField] private MarketRegistry _marketRegistry;
@@ -32,6 +41,10 @@ namespace MarketTycoon.Core.Bootstrap
 
         private CurrencyModel _currencyModel;
         private CurrencyController _currencyController;
+        private SettingsModel _settingsModel;
+        private SettingsController _settingsController;
+        private GameplayHUDController _hudController;
+
         private GameSaveData _currentSaveData;
         private float _autoSaveTimer;
         private bool _isInitialized = false;
@@ -55,6 +68,7 @@ namespace MarketTycoon.Core.Bootstrap
             }
 
             InitializeCoreServices();
+            InitializeUI();
             InitializeDefaultCheckout();
             InitializeBuildingSpots();
             InitializeSaveSystem();
@@ -66,13 +80,24 @@ namespace MarketTycoon.Core.Bootstrap
 
         private void InitializeCoreServices()
         {
-            if (_currencyView == null)
+            _currencyModel = new CurrencyModel();
+            _currencyController = new CurrencyController(_currencyModel);
+
+            _settingsModel = new SettingsModel();
+        }
+
+        private void InitializeUI()
+        {
+            if (_settingsView != null)
             {
-                _currencyView = FindFirstObjectByType<CurrencyView>();
+                _settingsController = new SettingsController(_settingsModel, _settingsView, _audioMixer);
+                _settingsView.SetVisible(false);
             }
 
-            _currencyModel = new CurrencyModel();
-            _currencyController = new CurrencyController(_currencyModel, _currencyView);
+            if (_gameplayHudView != null)
+            {
+                _hudController = new GameplayHUDController(_gameplayHudView, _currencyController, _settingsController);
+            }
         }
 
         private void InitializeDefaultCheckout()
@@ -120,11 +145,6 @@ namespace MarketTycoon.Core.Bootstrap
             else
             {
                 _currencyController.SetAmount(_startingCurrency);
-            }
-
-            if (_currencyView != null)
-            {
-                _currencyView.UpdateDisplay(_currencyController.CurrentAmount);
             }
 
             if (hasSaveFile && _currentSaveData.BuildingSpots != null)
@@ -248,6 +268,13 @@ namespace MarketTycoon.Core.Bootstrap
             {
                 SaveGameState();
             }
+        }
+
+        private void OnDestroy()
+        {
+            _hudController?.Dispose();
+            _settingsController?.Dispose();
+            _currencyController?.Dispose();
         }
 
         [ContextMenu("Clear Game Save")]

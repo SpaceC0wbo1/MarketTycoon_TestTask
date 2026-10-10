@@ -16,14 +16,9 @@ namespace MarketTycoon.Core.Currency
             remove => _model.OnAmountChanged -= value;
         }
 
-        public CurrencyController(CurrencyModel model, CurrencyView view)
+        public CurrencyController(CurrencyModel model)
         {
             _model = model ?? throw new ArgumentNullException(nameof(model));
-            _view = view ?? throw new ArgumentNullException(nameof(view));
-
-            _model.OnAmountChanged += HandleAmountChanged;
-
-            _view.UpdateDisplay(_model.CurrentAmount);
         }
 
         public void Add(int amount)
