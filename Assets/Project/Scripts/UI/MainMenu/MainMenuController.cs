@@ -43,11 +43,11 @@ namespace MarketTycoon.UI.MainMenu
         {
             if (SceneLoader.Instance != null)
             {
-                SceneLoader.Instance.LoadSceneAsync(_gameplaySceneName.ToString());
+                SceneLoader.Instance.LoadSceneAsync(_gameplaySceneName.name);
             }
             else
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(_gameplaySceneName.ToString());
+                UnityEngine.SceneManagement.SceneManager.LoadScene(_gameplaySceneName.name);
             }
         }
 
