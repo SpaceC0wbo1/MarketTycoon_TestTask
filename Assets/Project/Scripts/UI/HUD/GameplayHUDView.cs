@@ -12,19 +12,16 @@ namespace MarketTycoon.UI.HUD
         [SerializeField] private string _currencyFormat = "Money: {0}";
 
         [Header("HUD Action Buttons")]
-        [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _pauseButton;
 
-        public event Action OnSettingsClicked;
         public event Action OnPauseClicked;
 
         private void Awake()
         {
-            if (_settingsButton != null)
-                _settingsButton.onClick.AddListener(() => OnSettingsClicked?.Invoke());
-
             if (_pauseButton != null)
+            {
                 _pauseButton.onClick.AddListener(() => OnPauseClicked?.Invoke());
+            }
         }
 
         public void UpdateCurrency(int amount)

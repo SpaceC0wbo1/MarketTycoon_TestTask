@@ -9,6 +9,7 @@ using MarketTycoon.Gameplay.Building;
 using MarketTycoon.Gameplay.Checkout;
 using MarketTycoon.Gameplay.Shelf;
 using MarketTycoon.UI.HUD;
+using MarketTycoon.UI.Pause;
 using MarketTycoon.UI.Settings;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -25,6 +26,8 @@ namespace MarketTycoon.Core.Bootstrap
         [Header("UI References")]
         [SerializeField] private GameplayHUDView _gameplayHudView;
         [SerializeField] private SettingsView _settingsView;
+        [SerializeField] private PausePopupView _pausePopupView;
+        [SerializeField] private string _mainMenuSceneName = "01_MainMenu";
 
         [Header("Audio Settings (Optional)")]
         [SerializeField] private AudioMixer _audioMixer;
@@ -43,6 +46,7 @@ namespace MarketTycoon.Core.Bootstrap
         private CurrencyController _currencyController;
         private SettingsModel _settingsModel;
         private SettingsController _settingsController;
+        private PausePopupController _pausePopupController;
         private GameplayHUDController _hudController;
 
         private GameSaveData _currentSaveData;
@@ -82,7 +86,6 @@ namespace MarketTycoon.Core.Bootstrap
         {
             _currencyModel = new CurrencyModel();
             _currencyController = new CurrencyController(_currencyModel);
-
             _settingsModel = new SettingsModel();
         }
 
@@ -94,9 +97,15 @@ namespace MarketTycoon.Core.Bootstrap
                 _settingsView.SetVisible(false);
             }
 
+            if (_pausePopupView != null)
+            {
+                _pausePopupController = new PausePopupController(_pausePopupView, _settingsController, _mainMenuSceneName);
+            }
+
             if (_gameplayHudView != null)
             {
-                _hudController = new GameplayHUDController(_gameplayHudView, _currencyController, _settingsController);
+                // Settings controller is now accessed solely via the pause popup
+                _hudController = new GameplayHUDController(_gameplayHudView, _currencyController, _pausePopupController);
             }
         }
 
@@ -247,6 +256,18 @@ namespace MarketTycoon.Core.Bootstrap
 
         private void Update()
         {
+            // Optional keyboard shortcut to toggle pause
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (_pausePopupController != null)
+                {
+                    if (_pausePopupController.IsPaused)
+                        _pausePopupController.Resume();
+                    else
+                        _pausePopupController.Pause();
+                }
+            }
+
             if (!_enableAutoSave || !_isInitialized) return;
 
             _autoSaveTimer += Time.deltaTime;
@@ -273,8 +294,8 @@ namespace MarketTycoon.Core.Bootstrap
         private void OnDestroy()
         {
             _hudController?.Dispose();
+            _pausePopupController?.Dispose();
             _settingsController?.Dispose();
-            _currencyController?.Dispose();
         }
 
         [ContextMenu("Clear Game Save")]

@@ -1,12 +1,10 @@
 using System;
-using MarketTycoon.UI;
 
 namespace MarketTycoon.Core.Currency
 {
-    public class CurrencyController : ICurrencyService, IDisposable
+    public class CurrencyController : ICurrencyService
     {
         private readonly CurrencyModel _model;
-        private readonly CurrencyView _view;
 
         public int CurrentAmount => _model.CurrentAmount;
 
@@ -39,19 +37,6 @@ namespace MarketTycoon.Core.Currency
         public void SetAmount(int amount)
         {
             _model.SetAmount(amount);
-        }
-
-        private void HandleAmountChanged(int newAmount) 
-        {
-            _view.UpdateDisplay(newAmount);
-        }
-
-        public void Dispose()
-        {
-            if (_model != null)
-            {
-                _model.OnAmountChanged -= HandleAmountChanged;
-            }
         }
     }
 }
