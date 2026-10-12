@@ -10,10 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01668297124a3ca4bbe4b16389cdc376, type: 3}
-  m_Name: BuildingConfig_ShelfBread
+  m_Name: BuildingConfig_Shelf_Fruit
   m_EditorClassIdentifier: Assembly-CSharp::MarketTycoon.Gameplay.Building.BuildingConfigSO
-  _buildingId: spot_shelf_02
-  _buildingTitle: Bread Shelf
+  _buildingTitle: Fruit Shelf
   _type: 0
-  _buildCost: 150
-  _constructedPrefab: {fileID: 8006122576656960489, guid: b321031c8add9024fae8f5436ce817f2, type: 3}
+  _buildCost: 75
+  _constructedPrefab: {fileID: 0}

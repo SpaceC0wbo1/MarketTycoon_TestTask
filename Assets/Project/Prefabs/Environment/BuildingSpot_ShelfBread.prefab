@@ -851,7 +851,7 @@ GameObject:
   - component: {fileID: 5665880184858043288}
   - component: {fileID: 5531420505246858911}
   m_Layer: 0
-  m_Name: BuildingSpot_Shelf
+  m_Name: BuildingSpot_ShelfBread
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
