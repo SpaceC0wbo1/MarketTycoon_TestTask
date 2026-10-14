@@ -43,11 +43,18 @@ namespace MarketTycoon.Gameplay.Checkout
         }
 
         public Vector3 GetSlotPositionForCustomer(CustomerController customer)
-        {
-            int index = _queueModel.GetCustomerIndex(customer);
-            if (index < 0) return _view.PaymentStandPoint.position;
-            return _view.GetQueueSlotPosition(index);
-        }
+{
+    // If the scene is unloading and view was destroyed, safely return zero
+    if (_view == null) return Vector3.zero;
+
+    int index = _queueModel.GetCustomerIndex(customer);
+    if (index < 0)
+    {
+        return _view.PaymentStandPoint != null ? _view.PaymentStandPoint.position : Vector3.zero;
+    }
+
+    return _view.GetQueueSlotPosition(index);
+}
 
         public void LeaveQueue(CustomerController customer)
         {

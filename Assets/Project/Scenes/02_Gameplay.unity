@@ -11796,9 +11796,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b25910b1278e6c41a6b20b29747ef2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MarketTycoon.Gameplay.AI.CustomerSpawner
-  _customerPrefab: {fileID: 5967576839141345440, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+  _customerPrefabs:
+  - {fileID: 5967576839141345440, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+  - {fileID: 8943667126806113245, guid: 773d1f98a9a19af4481d3abdefe24a24, type: 3}
+  - {fileID: 628791047829949748, guid: 2af2194c56dd53f448f0fe50cc850a84, type: 3}
+  - {fileID: 5861264296362061126, guid: 3a8896a4e24ce904fa2d89a5c700b073, type: 3}
+  - {fileID: 6900403785332611297, guid: 9e326e1142e2b164f98ba00a55121da8, type: 3}
+  - {fileID: 5221165814571017824, guid: 20b184305732a464fae9f11416b2cbcc, type: 3}
   _spawnPoint: {fileID: 1310377129}
   _exitPoint: {fileID: 647581594}
+  _minBrowseTime: 2
+  _maxBrowseTime: 6
   _waveInterval: 4.5
   _staggerDelay: 0.6
   _maxGlobalCapacity: 8

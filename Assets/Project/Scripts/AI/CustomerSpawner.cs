@@ -6,10 +6,19 @@ namespace MarketTycoon.Gameplay.AI
 {
     public class CustomerSpawner : MonoBehaviour
     {
-        [Header("Prefab & Waypoints")]
-        [SerializeField] private GameObject _customerPrefab;
+        [Header("Customer Variations")]
+        [Tooltip("List of customer prefabs with different visuals/skins")]
+        [SerializeField] private GameObject[] _customerPrefabs;
+
+        [Header("Waypoints")]
         [SerializeField] private Transform _spawnPoint;
         [SerializeField] private Transform _exitPoint;
+
+        [Header("Browsing Behavior")]
+        [Tooltip("Minimum time a customer wanders around before heading to a shelf")]
+        [SerializeField] private float _minBrowseTime = 2.0f;
+        [Tooltip("Maximum time a customer wanders around before heading to a shelf")]
+        [SerializeField] private float _maxBrowseTime = 6.0f;
 
         [Header("Pacing")]
         [Tooltip("Time between customer spawn waves.")]
@@ -46,7 +55,6 @@ namespace MarketTycoon.Gameplay.AI
 
                 if (_marketRegistry != null && _marketRegistry.ActiveShelvesCount > 0)
                 {
-                    // Target count matches active shelves: 1 shelf = 1 customer, 2 shelves = 2 customers, etc.
                     int targetWaveCount = _marketRegistry.ActiveShelvesCount;
                     int allowedToSpawn = Mathf.Min(targetWaveCount, _maxGlobalCapacity - _activeCustomers.Count);
 
@@ -63,18 +71,24 @@ namespace MarketTycoon.Gameplay.AI
 
         private void SpawnSingleCustomer()
         {
-            if (_customerPrefab == null || _spawnPoint == null || _marketRegistry == null) return;
+            if (_customerPrefabs == null || _customerPrefabs.Length == 0 || _spawnPoint == null || _marketRegistry == null)
+                return;
 
             var targetShelf = _marketRegistry.GetOptimalShelf();
             var targetCheckout = _marketRegistry.GetLessBusyCheckout();
 
-            if (targetShelf == null || targetCheckout == null) return;
+            if (targetShelf == null || targetCheckout == null)
+                return;
 
-            GameObject customerInstance = Instantiate(_customerPrefab, _spawnPoint.position, _spawnPoint.rotation);
+            // Pick a random customer skin/prefab
+            GameObject selectedPrefab = _customerPrefabs[Random.Range(0, _customerPrefabs.Length)];
+            if (selectedPrefab == null) return;
+
+            GameObject customerInstance = Instantiate(selectedPrefab, _spawnPoint.position, _spawnPoint.rotation);
             CustomerView view = customerInstance.GetComponent<CustomerView>();
             CustomerController controller = customerInstance.AddComponent<CustomerController>();
 
-            controller.Initialize(view, targetShelf, targetCheckout, _exitPoint);
+            controller.Initialize(view, targetShelf, targetCheckout, _exitPoint, _minBrowseTime, _maxBrowseTime);
             _activeCustomers.Add(customerInstance);
         }
 

@@ -3,6 +3,7 @@ namespace MarketTycoon.Gameplay.AI
     public enum CustomerState
     {
         Spawning,
+        Browsing,
         WalkingToShelf,
         TakingItem,
         WalkingToCheckout,
@@ -30,4 +31,3 @@ namespace MarketTycoon.Gameplay.AI
         }
     }
 }
-
