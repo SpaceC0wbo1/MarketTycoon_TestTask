@@ -7,27 +7,25 @@ namespace MarketTycoon.Gameplay.AI
     public class CustomerSpawner : MonoBehaviour
     {
         [Header("Customer Variations")]
-        [Tooltip("List of customer prefabs with different visuals/skins")]
         [SerializeField] private GameObject[] _customerPrefabs;
 
         [Header("Waypoints")]
         [SerializeField] private Transform _spawnPoint;
         [SerializeField] private Transform _exitPoint;
 
-        [Header("Browsing Behavior")]
-        [Tooltip("Minimum time a customer wanders around before heading to a shelf")]
+        [Header("Market Wander Areas")]
+        [Tooltip("List of all room wander zone colliders (inactive rooms will be included once unlocked)")]
+        [SerializeField] private List<Collider> _wanderZones = new List<Collider>();
+
+        [Header("Browsing Duration")]
         [SerializeField] private float _minBrowseTime = 2.0f;
-        [Tooltip("Maximum time a customer wanders around before heading to a shelf")]
-        [SerializeField] private float _maxBrowseTime = 6.0f;
+        [SerializeField] private float _maxBrowseTime = 5.0f;
 
         [Header("Pacing")]
-        [Tooltip("Time between customer spawn waves.")]
         [SerializeField] private float _waveInterval = 5.0f;
-        [Tooltip("Delay between individual customers within the same wave.")]
         [SerializeField] private float _staggerDelay = 0.6f;
 
         [Header("Capacity Limits")]
-        [Tooltip("Maximum total customers permitted in market at once.")]
         [SerializeField] private int _maxGlobalCapacity = 8;
 
         private readonly List<GameObject> _activeCustomers = new List<GameObject>();
@@ -43,6 +41,27 @@ namespace MarketTycoon.Gameplay.AI
                 StopCoroutine(_spawnRoutine);
             }
             _spawnRoutine = StartCoroutine(SpawnLoop());
+        }
+
+        public void RegisterWanderZone(Collider zoneCollider)
+        {
+            if (zoneCollider != null && !_wanderZones.Contains(zoneCollider))
+            {
+                _wanderZones.Add(zoneCollider);
+            }
+        }
+
+        private List<Bounds> GetActiveWanderBounds()
+        {
+            var activeBounds = new List<Bounds>();
+            for (int i = 0; i < _wanderZones.Count; i++)
+            {
+                if (_wanderZones[i] != null && _wanderZones[i].gameObject.activeInHierarchy && _wanderZones[i].enabled)
+                {
+                    activeBounds.Add(_wanderZones[i].bounds);
+                }
+            }
+            return activeBounds;
         }
 
         private IEnumerator SpawnLoop()
@@ -80,7 +99,6 @@ namespace MarketTycoon.Gameplay.AI
             if (targetShelf == null || targetCheckout == null)
                 return;
 
-            // Pick a random customer skin/prefab
             GameObject selectedPrefab = _customerPrefabs[Random.Range(0, _customerPrefabs.Length)];
             if (selectedPrefab == null) return;
 
@@ -88,7 +106,18 @@ namespace MarketTycoon.Gameplay.AI
             CustomerView view = customerInstance.GetComponent<CustomerView>();
             CustomerController controller = customerInstance.AddComponent<CustomerController>();
 
-            controller.Initialize(view, targetShelf, targetCheckout, _exitPoint, _minBrowseTime, _maxBrowseTime);
+            List<Bounds> currentActiveZones = GetActiveWanderBounds();
+
+            controller.Initialize(
+                view,
+                targetShelf,
+                targetCheckout,
+                _exitPoint,
+                currentActiveZones,
+                _minBrowseTime,
+                _maxBrowseTime
+            );
+
             _activeCustomers.Add(customerInstance);
         }
 

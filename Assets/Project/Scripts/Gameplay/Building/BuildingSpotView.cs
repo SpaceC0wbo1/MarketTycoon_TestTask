@@ -42,6 +42,12 @@ namespace MarketTycoon.Gameplay.Building
                 _spotCollider = GetComponent<Collider>();
             }
 
+            // Do NOT auto-assign object to activate if this spot is a room expansion
+            if (_config != null && _config.Type == BuildingType.RoomExpansion)
+            {
+                return;
+            }
+
             if (_objectToActivate == null)
             {
                 var shelfChild = GetComponentInChildren<MarketTycoon.Gameplay.Shelf.ShelfView>(true);
@@ -83,6 +89,16 @@ namespace MarketTycoon.Gameplay.Building
                 _costText.gameObject.SetActive(!isBuilt);
             }
 
+            // For room expansion, inner objects are handled directly by RoomExpansionView
+            if (_config != null && _config.Type == BuildingType.RoomExpansion)
+            {
+                if (_spotCollider != null)
+                {
+                    _spotCollider.enabled = !isBuilt;
+                }
+                return;
+            }
+
             if (_objectToActivate != null)
             {
                 _objectToActivate.SetActive(isBuilt);
@@ -102,6 +118,12 @@ namespace MarketTycoon.Gameplay.Building
         public void PlayBuildEffect()
         {
             EnsureReferences();
+
+            if (_config != null && _config.Type == BuildingType.RoomExpansion)
+            {
+                return;
+            }
+
             if (_objectToActivate != null)
             {
                 StopAllCoroutines();

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections;
 using MarketTycoon.Gameplay.Checkout;
 using MarketTycoon.Gameplay.Shelf;
@@ -15,6 +16,7 @@ namespace MarketTycoon.Gameplay.AI
         private Transform _exitPoint;
         private System.Action _onQueueShiftAction;
 
+        private List<Bounds> _wanderBoundsList;
         private float _browseDuration;
 
         public void Initialize(
@@ -22,8 +24,9 @@ namespace MarketTycoon.Gameplay.AI
             ShelfController shelf,
             CheckoutController checkout,
             Transform exitPoint,
+            List<Bounds> wanderBoundsList,
             float minBrowseTime = 2.0f,
-            float maxBrowseTime = 6.0f)
+            float maxBrowseTime = 5.0f)
         {
             _model = new CustomerModel();
             _view = view;
@@ -31,6 +34,7 @@ namespace MarketTycoon.Gameplay.AI
             _targetCheckout = checkout;
             _exitPoint = exitPoint;
 
+            _wanderBoundsList = wanderBoundsList;
             _browseDuration = Random.Range(minBrowseTime, maxBrowseTime);
 
             StartCoroutine(CustomerLifecycleRoutine());
@@ -38,31 +42,32 @@ namespace MarketTycoon.Gameplay.AI
 
         private IEnumerator CustomerLifecycleRoutine()
         {
-            // 1. Browsing / Wandering around the store before shopping
-            if (_browseDuration > 0.1f)
+            // 1. Browsing strictly inside any of the unlocked store zones
+            if (_browseDuration > 0.1f && _wanderBoundsList != null && _wanderBoundsList.Count > 0)
             {
                 _model.CurrentState = CustomerState.Browsing;
                 float browseTimer = 0f;
 
                 while (browseTimer < _browseDuration)
                 {
-                    // Pick a random destination on NavMesh within wander radius
-                    Vector3 wanderTarget = GetRandomNavMeshPoint(transform.position, 6.0f);
+                    // Pick a random unlocked room/zone
+                    Bounds chosenBounds = _wanderBoundsList[Random.Range(0, _wanderBoundsList.Count)];
+                    Vector3 wanderTarget = GetSafePointInBounds(chosenBounds);
                     _view.MoveTo(wanderTarget);
 
-                    float waitTime = Random.Range(1.0f, 2.5f);
+                    float wanderWaitTime = Random.Range(1.4f, 2.8f);
                     float elapsed = 0f;
 
-                    while (!_view.HasReachedDestination() && elapsed < waitTime)
+                    while (!_view.HasReachedDestination() && elapsed < wanderWaitTime)
                     {
                         elapsed += Time.deltaTime;
                         browseTimer += Time.deltaTime;
                         yield return null;
                     }
 
-                    // Pause briefly to "inspect" items/scenery
-                    yield return new WaitForSeconds(Random.Range(0.5f, 1.2f));
-                    browseTimer += 1.0f;
+                    float inspectDelay = Random.Range(0.6f, 1.2f);
+                    yield return new WaitForSeconds(inspectDelay);
+                    browseTimer += inspectDelay;
                 }
             }
 
@@ -119,7 +124,6 @@ namespace MarketTycoon.Gameplay.AI
                 yield return new WaitForSeconds(0.2f);
             }
 
-            // Move to counter
             if (_targetCheckout.View != null)
             {
                 _view.MoveTo(_targetCheckout.View.PaymentStandPoint.position);
@@ -130,7 +134,6 @@ namespace MarketTycoon.Gameplay.AI
                 yield return null;
             }
 
-            // Wait until cashier is ready
             while (_targetCheckout.IsBusy)
             {
                 yield return new WaitForSeconds(0.1f);
@@ -149,12 +152,12 @@ namespace MarketTycoon.Gameplay.AI
                 yield return null;
             }
 
-            // Unsubscribe and leave queue
             if (_onQueueShiftAction != null)
             {
                 _targetCheckout.OnQueueShifted -= _onQueueShiftAction;
                 _onQueueShiftAction = null;
             }
+
             _targetCheckout.LeaveQueue(this);
             _model.ClearBasket();
 
@@ -176,17 +179,29 @@ namespace MarketTycoon.Gameplay.AI
             Destroy(gameObject);
         }
 
-        private Vector3 GetRandomNavMeshPoint(Vector3 origin, float radius)
+        private Vector3 GetSafePointInBounds(Bounds bounds)
         {
-            Vector3 randomDirection = Random.insideUnitSphere * radius;
-            randomDirection += origin;
+            float padding = 0.8f;
+            float minX = bounds.min.x + padding;
+            float maxX = bounds.max.x - padding;
+            float minZ = bounds.min.z + padding;
+            float maxZ = bounds.max.z - padding;
 
-            if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, radius, NavMesh.AllAreas))
+            if (minX >= maxX) { minX = bounds.min.x; maxX = bounds.max.x; }
+            if (minZ >= maxZ) { minZ = bounds.min.z; maxZ = bounds.max.z; }
+
+            Vector3 randomPoint = new Vector3(
+                Random.Range(minX, maxX),
+                bounds.center.y,
+                Random.Range(minZ, maxZ)
+            );
+
+            if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 3.0f, NavMesh.AllAreas))
             {
                 return hit.position;
             }
 
-            return origin;
+            return bounds.center;
         }
 
         private void OnDestroy()

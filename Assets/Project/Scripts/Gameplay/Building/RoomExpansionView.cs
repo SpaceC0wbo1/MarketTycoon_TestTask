@@ -4,66 +4,82 @@ using UnityEngine;
 
 namespace MarketTycoon.Gameplay.Building
 {
-    /// <summary>
-    /// Handles visual unlocking sequence for a new room: door animator, darkness fade, and NavMesh rebuild.
-    /// </summary>
     public class RoomExpansionView : MonoBehaviour
     {
         [Header("Door Animator")]
+        [Tooltip("Animator component on the door object. The GameObject itself is never deactivated.")]
         [SerializeField] private Animator _doorAnimator;
         [SerializeField] private string _openTriggerName = "Open";
 
         [Header("Darkness Overlay")]
-        [Tooltip("Dark translucent cube or plane placed above the locked room.")]
+        [Tooltip("Dark translucent cover placed over the locked room.")]
         [SerializeField] private GameObject _darknessOverlay;
 
         [Header("Obstacles & Content")]
-        [Tooltip("Door obstacle collider that blocks NavMesh before opening (if used).")]
+        [Tooltip("Invisible collider or NavMeshObstacle blocking the passage before opening.")]
         [SerializeField] private GameObject _doorColliderObstacle;
 
-        [Tooltip("Container holding building spots or decorations inside the room.")]
+        [Tooltip("Container holding shelves and items inside the new room.")]
         [SerializeField] private GameObject _roomContent;
+
+        [Header("Room Wander Zone")]
+        [Tooltip("Wander zone collider for customers inside the new room.")]
+        [SerializeField] private Collider _roomWanderZone;
+
+        private bool _isUnlocked = false;
 
         private void Awake()
         {
-            // Initial state: room is locked
-            SetLockedState(true);
+            if (!_isUnlocked)
+            {
+                SetLockedState(true);
+            }
         }
 
         public void UnlockRoom()
         {
+            _isUnlocked = true;
+            StopAllCoroutines();
             StartCoroutine(UnlockSequenceRoutine());
         }
 
         private IEnumerator UnlockSequenceRoutine()
         {
-            // 1. Trigger door open animation
+            // 1. Trigger door opening animation (object stays active permanently)
             if (_doorAnimator != null)
             {
                 _doorAnimator.SetTrigger(_openTriggerName);
             }
 
-            // Small delay for door animation to progress
-            yield return new WaitForSeconds(0.25f);
+            // Brief delay to let the door open visually
+            yield return new WaitForSeconds(0.35f);
 
-            // 2. Disable darkness overlay and open door obstacle
+            // 2. Remove darkness overlay
             if (_darknessOverlay != null)
             {
                 _darknessOverlay.SetActive(false);
             }
 
+            // 3. Remove passage blocker so agents and players can pass
             if (_doorColliderObstacle != null)
             {
                 _doorColliderObstacle.SetActive(false);
             }
 
-            // 3. Enable interactive content inside the room
+            // 4. Reveal inner room content (shelves, decor)
             if (_roomContent != null)
             {
                 _roomContent.SetActive(true);
             }
 
-            // 4. Update NavMesh so agents can navigate through the door
+            // 5. Activate wander zone for customer AI
+            if (_roomWanderZone != null)
+            {
+                _roomWanderZone.gameObject.SetActive(true);
+                _roomWanderZone.enabled = true;
+            }
+
+            // 6. Update NavMesh
             if (NavMeshRuntimeUpdater.Instance != null)
             {
                 NavMeshRuntimeUpdater.Instance.RebuildNavMesh();
@@ -72,6 +88,8 @@ namespace MarketTycoon.Gameplay.Building
 
         public void SetLockedState(bool isLocked)
         {
+            _isUnlocked = !isLocked;
+
             if (_darknessOverlay != null)
             {
                 _darknessOverlay.SetActive(isLocked);
@@ -85,6 +103,12 @@ namespace MarketTycoon.Gameplay.Building
             if (_roomContent != null)
             {
                 _roomContent.SetActive(!isLocked);
+            }
+
+            if (_roomWanderZone != null)
+            {
+                _roomWanderZone.gameObject.SetActive(!isLocked);
+                _roomWanderZone.enabled = !isLocked;
             }
         }
     }
