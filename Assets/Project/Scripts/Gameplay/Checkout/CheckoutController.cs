@@ -61,17 +61,23 @@ namespace MarketTycoon.Gameplay.Checkout
             _queueModel.Dequeue(customer);
         }
 
-        public IEnumerator ProcessPaymentRoutine(int itemsCount, int itemPrice, Action onPaymentCompleted)
+        public IEnumerator ProcessPaymentRoutine(int itemCount, int pricePerItem, Action onCompleted)
         {
             _isBusy = true;
 
             yield return new WaitForSeconds(_model.ServiceDuration);
 
-            int totalProfit = itemsCount * itemPrice;
-            _currencyService.Add(totalProfit);
+            int totalAmount = itemCount * pricePerItem;
+            _currencyService.Add(totalAmount);
+
+            // Trigger cashier celebration emote on successful payment
+            if (_view != null)
+            {
+                _view.PlayPaymentSuccessEmote();
+            }
 
             _isBusy = false;
-            onPaymentCompleted?.Invoke();
+            onCompleted?.Invoke();
         }
     }
 }

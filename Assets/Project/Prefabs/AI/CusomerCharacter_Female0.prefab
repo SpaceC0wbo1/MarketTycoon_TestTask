@@ -66,7 +66,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
       propertyPath: m_Name
-      value: CusomerCharacter
+      value: CusomerCharacter_Female0
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
       propertyPath: m_Layer
@@ -110,6 +110,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 5249419458680449080}
   m_SourcePrefab: {fileID: 100100000, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
+--- !u!95 &1115463327927224416 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
+  m_PrefabInstance: {fileID: 6778056344455050737}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5967576839141345440 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
@@ -172,3 +177,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8a19df4d06f2124584cd70599608a4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MarketTycoon.Gameplay.AI.CustomerView
+  _agent: {fileID: 684349832679140587}
+  _animator: {fileID: 1115463327927224416}
+  _idleClip: {fileID: -5252816984213320552, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
+  _walkClip: {fileID: -3419257869308726280, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
+  _interactClip: {fileID: 4297623066254443295, guid: 680702fa5724de0479bd90df79b6b851, type: 3}

@@ -206,16 +206,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MarketTycoon.Gameplay.Checkout.CheckoutView
   _config: {fileID: 11400000, guid: 5c9a5b9154db8e04e93e5f1eab3e5ff2, type: 2}
-  _manualQueuePoints:
-  - {fileID: 4441541106372171117}
-  - {fileID: 8720461288380555174}
-  - {fileID: 6953987507768717202}
-  - {fileID: 4004879327802174360}
-  - {fileID: 6365463669664047874}
-  - {fileID: 6805208517517639464}
   _paymentStandPoint: {fileID: 2814139039071985401}
-  _slotSpacing: 0.9
-  _totalSlots: 5
+  _queueSlots: []
+  _cashierAnimator: {fileID: 427929348459672553}
+  _cashierIdleClip: {fileID: -5252816984213320552, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
+  _cashierEmoteYesClip: {fileID: -2473369329123925276, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
 --- !u!65 &1090563126466347225
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -411,6 +406,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+--- !u!95 &427929348459672553 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 1115463327927224416, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+  m_PrefabInstance: {fileID: 759600379359198089}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5985393500103567763 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6456691990811513370, guid: 111a22f459488134ea2aca19497d8251, type: 3}

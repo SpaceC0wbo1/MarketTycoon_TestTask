@@ -1,46 +1,83 @@
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 namespace MarketTycoon.Gameplay.Checkout
 {
     public class CheckoutView : MonoBehaviour
     {
-        [Header("Configuration")]
+        [Header("Config")]
         [SerializeField] private CheckoutConfigSO _config;
 
-        [Header("Queue Layout")]
-        [Tooltip("Directly assigned queue points. If empty, points will be calculated automatically.")]
-        [SerializeField] private Transform[] _manualQueuePoints;
+        [Header("Points")]
         [SerializeField] private Transform _paymentStandPoint;
-        [SerializeField] private float _slotSpacing = 0.9f;
-        [SerializeField] private int _totalSlots = 5;
+        [SerializeField] private Transform[] _queueSlots;
+
+        [Header("Cashier Animation Clips")]
+        [SerializeField] private Animator _cashierAnimator;
+        [SerializeField] private AnimationClip _cashierIdleClip;
+        [SerializeField] private AnimationClip _cashierEmoteYesClip;
+
+        private PlayableGraph _playableGraph;
 
         public CheckoutConfigSO Config => _config;
-        public Transform PaymentStandPoint => _paymentStandPoint != null ? _paymentStandPoint : transform;
+        public Transform PaymentStandPoint => _paymentStandPoint;
 
-        public Vector3 GetQueueSlotPosition(int slotIndex)
+        private void Start()
         {
-            if (_manualQueuePoints != null && _manualQueuePoints.Length > slotIndex && _manualQueuePoints[slotIndex] != null)
+            if (_cashierAnimator != null && _cashierIdleClip != null)
             {
-                return _manualQueuePoints[slotIndex].position;
+                PlayClip(_cashierIdleClip);
             }
-
-            // Fallback: calculate backwards along the transform's negative forward or back vector
-            Vector3 origin = PaymentStandPoint.position;
-            Vector3 queueDirection = -PaymentStandPoint.forward;
-            return origin + (queueDirection * (slotIndex * _slotSpacing));
         }
 
-        private void OnDrawGizmosSelected()
+        public Vector3 GetQueueSlotPosition(int index)
         {
-            Gizmos.color = Color.yellow;
-            for (int i = 0; i < _totalSlots; i++)
+            if (_queueSlots != null && index >= 0 && index < _queueSlots.Length)
             {
-                Vector3 pos = GetQueueSlotPosition(i);
-                Gizmos.DrawWireSphere(pos, 0.25f);
-                if (i > 0)
-                {
-                    Gizmos.DrawLine(GetQueueSlotPosition(i - 1), pos);
-                }
+                return _queueSlots[index].position;
+            }
+
+            return _paymentStandPoint != null ? _paymentStandPoint.position : transform.position;
+        }
+
+        public void PlayPaymentSuccessEmote()
+        {
+            if (_cashierAnimator != null && _cashierEmoteYesClip != null)
+            {
+                PlayClip(_cashierEmoteYesClip);
+
+                // Return to idle after emote finishes
+                CancelInvoke(nameof(ResetCashierToIdle));
+                Invoke(nameof(ResetCashierToIdle), _cashierEmoteYesClip.length);
+            }
+        }
+
+        public void ResetCashierToIdle()
+        {
+            if (_cashierAnimator != null && _cashierIdleClip != null)
+            {
+                PlayClip(_cashierIdleClip);
+            }
+        }
+
+        private void PlayClip(AnimationClip clip)
+        {
+            if (clip == null || _cashierAnimator == null) return;
+
+            if (_playableGraph.IsValid())
+            {
+                _playableGraph.Destroy();
+            }
+
+            AnimationPlayableUtilities.PlayClip(_cashierAnimator, clip, out _playableGraph);
+        }
+
+        private void OnDestroy()
+        {
+            if (_playableGraph.IsValid())
+            {
+                _playableGraph.Destroy();
             }
         }
     }

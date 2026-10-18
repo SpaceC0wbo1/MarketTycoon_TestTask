@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 using MarketTycoon.Gameplay.Checkout;
 using MarketTycoon.Gameplay.Shelf;
 using UnityEngine;
@@ -42,7 +42,9 @@ namespace MarketTycoon.Gameplay.AI
 
         private IEnumerator CustomerLifecycleRoutine()
         {
-            // 1. Browsing strictly inside any of the unlocked store zones
+            // -------------------------------------------------------------
+            // 1. Browsing strictly inside store bounds
+            // -------------------------------------------------------------
             if (_browseDuration > 0.1f && _wanderBoundsList != null && _wanderBoundsList.Count > 0)
             {
                 _model.CurrentState = CustomerState.Browsing;
@@ -50,12 +52,13 @@ namespace MarketTycoon.Gameplay.AI
 
                 while (browseTimer < _browseDuration)
                 {
-                    // Pick a random unlocked room/zone
                     Bounds chosenBounds = _wanderBoundsList[Random.Range(0, _wanderBoundsList.Count)];
                     Vector3 wanderTarget = GetSafePointInBounds(chosenBounds);
                     _view.MoveTo(wanderTarget);
 
-                    float wanderWaitTime = Random.Range(1.4f, 2.8f);
+                    yield return null; // Wait 1 frame to initialize path
+
+                    float wanderWaitTime = Random.Range(1.5f, 3.0f);
                     float elapsed = 0f;
 
                     while (!_view.HasReachedDestination() && elapsed < wanderWaitTime)
@@ -71,22 +74,38 @@ namespace MarketTycoon.Gameplay.AI
                 }
             }
 
+            // -------------------------------------------------------------
             // 2. Walk to Shelf
+            // -------------------------------------------------------------
             _model.CurrentState = CustomerState.WalkingToShelf;
             Vector3 shelfPos = _targetShelf.View.CustomerStandPoint.position;
             _view.MoveTo(shelfPos);
 
+            yield return null; // Wait 1 frame so path is registered
+
             float walkElapsed = 0f;
-            while (!_view.HasReachedDestination() && walkElapsed < 6.0f)
+            while (!_view.HasReachedDestination() && walkElapsed < 8.0f)
             {
                 walkElapsed += Time.deltaTime;
                 yield return null;
             }
 
+            // -------------------------------------------------------------
             // 3. Pick Item
+            // -------------------------------------------------------------
             _model.CurrentState = CustomerState.TakingItem;
             _targetShelf.SetOccupied(true);
-            yield return new WaitForSeconds(0.4f);
+
+            // Face shelf
+            Vector3 shelfDir = _targetShelf.View.transform.position - transform.position;
+            shelfDir.y = 0f;
+            if (shelfDir != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(shelfDir);
+            }
+
+            _view.PlayInteract();
+            yield return new WaitForSeconds(0.6f);
 
             if (_targetShelf.TryTakeProduct())
             {
@@ -94,8 +113,11 @@ namespace MarketTycoon.Gameplay.AI
             }
 
             _targetShelf.SetOccupied(false);
+            _view.ResetLocomotion();
 
+            // -------------------------------------------------------------
             // 4. Join Checkout Queue
+            // -------------------------------------------------------------
             _model.CurrentState = CustomerState.WalkingToCheckout;
 
             Vector3 queuePosition;
@@ -104,42 +126,73 @@ namespace MarketTycoon.Gameplay.AI
                 yield return new WaitForSeconds(0.3f);
             }
 
+            // Move to the assigned queue slot
             _view.MoveTo(queuePosition);
+            yield return null;
 
+            // Handle queue shifts when preceding customers leave
             _onQueueShiftAction = () =>
             {
                 if (this != null && _view != null && _targetCheckout != null && _targetCheckout.View != null)
                 {
-                    Vector3 nextSlot = _targetCheckout.GetSlotPositionForCustomer(this);
-                    _view.MoveTo(nextSlot);
+                    // Only move to next slot if we haven't stepped up to the payment counter yet
+                    if (_model.CurrentState == CustomerState.WaitingForPayment)
+                    {
+                        Vector3 nextSlot = _targetCheckout.GetSlotPositionForCustomer(this);
+                        _view.MoveTo(nextSlot);
+                    }
                 }
             };
             _targetCheckout.OnQueueShifted += _onQueueShiftAction;
 
-            // 5. Wait in Queue Until Becoming 1st in Line
-            _model.CurrentState = CustomerState.WaitingForPayment;
-
-            while (!_targetCheckout.QueueModel.IsFirstInLine(this))
+            // Wait until customer physically reaches their waiting slot in the queue
+            walkElapsed = 0f;
+            while (!_view.HasReachedDestination() && walkElapsed < 8.0f)
             {
-                yield return new WaitForSeconds(0.2f);
-            }
-
-            if (_targetCheckout.View != null)
-            {
-                _view.MoveTo(_targetCheckout.View.PaymentStandPoint.position);
-            }
-
-            while (!_view.HasReachedDestination())
-            {
+                walkElapsed += Time.deltaTime;
                 yield return null;
             }
 
-            while (_targetCheckout.IsBusy)
+            // -------------------------------------------------------------
+            // 5. Wait in Queue Until 1st in Line AND Cashier is Ready
+            // -------------------------------------------------------------
+            _model.CurrentState = CustomerState.WaitingForPayment;
+
+            // Stay in the queue slot until becoming first AND cashier finishes previous customer
+            while (!_targetCheckout.QueueModel.IsFirstInLine(this) || _targetCheckout.IsBusy)
             {
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(0.15f);
             }
 
+            // Now step forward from the queue slot to the payment counter
+            if (_targetCheckout.View != null)
+            {
+                _view.MoveTo(_targetCheckout.View.PaymentStandPoint.position);
+                yield return null;
+
+                walkElapsed = 0f;
+                while (!_view.HasReachedDestination() && walkElapsed < 4.0f)
+                {
+                    walkElapsed += Time.deltaTime;
+                    yield return null;
+                }
+            }
+
+            // -------------------------------------------------------------
             // 6. Payment
+            // -------------------------------------------------------------
+            if (_targetCheckout.View != null)
+            {
+                Vector3 cashierDir = _targetCheckout.View.transform.position - transform.position;
+                cashierDir.y = 0f;
+                if (cashierDir != Vector3.zero)
+                {
+                    transform.rotation = Quaternion.LookRotation(cashierDir);
+                }
+            }
+
+            _view.PlayInteract();
+
             bool isPaymentFinished = false;
             StartCoroutine(_targetCheckout.ProcessPaymentRoutine(
                 _model.ItemsInBasket,
@@ -152,6 +205,9 @@ namespace MarketTycoon.Gameplay.AI
                 yield return null;
             }
 
+            _view.ResetLocomotion();
+
+            // Unsubscribe from queue shifts BEFORE leaving queue to avoid self-triggering
             if (_onQueueShiftAction != null)
             {
                 _targetCheckout.OnQueueShifted -= _onQueueShiftAction;
@@ -161,20 +217,26 @@ namespace MarketTycoon.Gameplay.AI
             _targetCheckout.LeaveQueue(this);
             _model.ClearBasket();
 
+            // -------------------------------------------------------------
             // 7. Walk to Exit
+            // -------------------------------------------------------------
             _model.CurrentState = CustomerState.WalkingToExit;
             if (_exitPoint != null)
             {
                 _view.MoveTo(_exitPoint.position);
+                yield return null;
+
                 walkElapsed = 0f;
-                while (!_view.HasReachedDestination() && walkElapsed < 8.0f)
+                while (!_view.HasReachedDestination() && walkElapsed < 9.0f)
                 {
                     walkElapsed += Time.deltaTime;
                     yield return null;
                 }
             }
 
+            // -------------------------------------------------------------
             // 8. Cleanup
+            // -------------------------------------------------------------
             _model.CurrentState = CustomerState.Completed;
             Destroy(gameObject);
         }

@@ -70,6 +70,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5249419458680449080, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+      propertyPath: _idleClip
+      value: 
+      objectReference: {fileID: -5252816984213320552, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
+    - target: {fileID: 5249419458680449080, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+      propertyPath: _walkClip
+      value: 
+      objectReference: {fileID: -3419257869308726280, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
+    - target: {fileID: 5249419458680449080, guid: 111a22f459488134ea2aca19497d8251, type: 3}
+      propertyPath: _interactClip
+      value: 
+      objectReference: {fileID: 4297623066254443295, guid: 680702fa5724de0479bd90df79b6b851, type: 3}
     - target: {fileID: 5967576839141345440, guid: 111a22f459488134ea2aca19497d8251, type: 3}
       propertyPath: m_Name
       value: CusomerCharacter_Female1
