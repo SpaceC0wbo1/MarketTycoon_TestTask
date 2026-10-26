@@ -29198,34 +29198,6 @@ PrefabInstance:
       value: -0.475
       objectReference: {fileID: 0}
     - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-      propertyPath: _queueSlots.Array.size
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-      propertyPath: '_queueSlots.Array.data[0]'
-      value: 
-      objectReference: {fileID: 1010531781038080170}
-    - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-      propertyPath: '_queueSlots.Array.data[1]'
-      value: 
-      objectReference: {fileID: 1010531781038080169}
-    - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-      propertyPath: '_queueSlots.Array.data[2]'
-      value: 
-      objectReference: {fileID: 1010531781038080168}
-    - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-      propertyPath: '_queueSlots.Array.data[3]'
-      value: 
-      objectReference: {fileID: 1010531781038080167}
-    - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-      propertyPath: '_queueSlots.Array.data[4]'
-      value: 
-      objectReference: {fileID: 1010531781038080166}
-    - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-      propertyPath: '_queueSlots.Array.data[5]'
-      value: 
-      objectReference: {fileID: 1010531781038080165}
-    - target: {fileID: 1346558119628233114, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
       propertyPath: _manualQueuePoints.Array.size
       value: 4
       objectReference: {fileID: 0}
@@ -29337,36 +29309,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bed5e9ecca9f7042b46e58bb096414e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MarketTycoon.Gameplay.Checkout.CheckoutView
---- !u!4 &1010531781038080165 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6805208517517639464, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-  m_PrefabInstance: {fileID: 1010531781038080163}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1010531781038080166 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6365463669664047874, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-  m_PrefabInstance: {fileID: 1010531781038080163}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1010531781038080167 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4004879327802174360, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-  m_PrefabInstance: {fileID: 1010531781038080163}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1010531781038080168 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6953987507768717202, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-  m_PrefabInstance: {fileID: 1010531781038080163}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1010531781038080169 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8720461288380555174, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-  m_PrefabInstance: {fileID: 1010531781038080163}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1010531781038080170 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4441541106372171117, guid: 65d75f181d2f5394997ca09a3336f43d, type: 3}
-  m_PrefabInstance: {fileID: 1010531781038080163}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1015549768749868290
 MonoBehaviour:
   m_ObjectHideFlags: 0
