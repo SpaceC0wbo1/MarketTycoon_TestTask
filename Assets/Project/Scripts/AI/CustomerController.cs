@@ -56,7 +56,7 @@ namespace MarketTycoon.Gameplay.AI
                     Vector3 wanderTarget = GetSafePointInBounds(chosenBounds);
                     _view.MoveTo(wanderTarget);
 
-                    yield return null; // Wait 1 frame to initialize path
+                    yield return null;
 
                     float wanderWaitTime = Random.Range(1.5f, 3.0f);
                     float elapsed = 0f;
@@ -81,7 +81,7 @@ namespace MarketTycoon.Gameplay.AI
             Vector3 shelfPos = _targetShelf.View.CustomerStandPoint.position;
             _view.MoveTo(shelfPos);
 
-            yield return null; // Wait 1 frame so path is registered
+            yield return null;
 
             float walkElapsed = 0f;
             while (!_view.HasReachedDestination() && walkElapsed < 8.0f)
@@ -96,7 +96,6 @@ namespace MarketTycoon.Gameplay.AI
             _model.CurrentState = CustomerState.TakingItem;
             _targetShelf.SetOccupied(true);
 
-            // Face shelf
             Vector3 shelfDir = _targetShelf.View.transform.position - transform.position;
             shelfDir.y = 0f;
             if (shelfDir != Vector3.zero)
@@ -126,17 +125,14 @@ namespace MarketTycoon.Gameplay.AI
                 yield return new WaitForSeconds(0.3f);
             }
 
-            // Move to the assigned queue slot
-            _view.MoveTo(queuePosition);
-            yield return null;
-
-            // Handle queue shifts when preceding customers leave
+            // ПІДПИСУЄМОСЯ ОДРАЗУ, щоб не втрачати зсув черги під час руху до слота
             _onQueueShiftAction = () =>
             {
                 if (this != null && _view != null && _targetCheckout != null && _targetCheckout.View != null)
                 {
-                    // Only move to next slot if we haven't stepped up to the payment counter yet
-                    if (_model.CurrentState == CustomerState.WaitingForPayment)
+                    // Оновлюємо позицію, якщо ми йдемо в чергу або вже стоїмо в ній
+                    if (_model.CurrentState == CustomerState.WalkingToCheckout ||
+                        _model.CurrentState == CustomerState.WaitingForPayment)
                     {
                         Vector3 nextSlot = _targetCheckout.GetSlotPositionForCustomer(this);
                         _view.MoveTo(nextSlot);
@@ -145,9 +141,12 @@ namespace MarketTycoon.Gameplay.AI
             };
             _targetCheckout.OnQueueShifted += _onQueueShiftAction;
 
-            // Wait until customer physically reaches their waiting slot in the queue
+            // Рухаємося до призначеного слота в черзі
+            _view.MoveTo(queuePosition);
+            yield return null;
+
             walkElapsed = 0f;
-            while (!_view.HasReachedDestination() && walkElapsed < 8.0f)
+            while (!_view.HasReachedDestination() && walkElapsed < 10.0f)
             {
                 walkElapsed += Time.deltaTime;
                 yield return null;
@@ -158,13 +157,13 @@ namespace MarketTycoon.Gameplay.AI
             // -------------------------------------------------------------
             _model.CurrentState = CustomerState.WaitingForPayment;
 
-            // Stay in the queue slot until becoming first AND cashier finishes previous customer
+            // Чекаємо у своєму слоті, доки ми не станемо першими І каса не звільниться
             while (!_targetCheckout.QueueModel.IsFirstInLine(this) || _targetCheckout.IsBusy)
             {
-                yield return new WaitForSeconds(0.15f);
+                yield return new WaitForSeconds(0.1f);
             }
 
-            // Now step forward from the queue slot to the payment counter
+            // Робимо крок уперед: зі слота черги до самої стійки оплати
             if (_targetCheckout.View != null)
             {
                 _view.MoveTo(_targetCheckout.View.PaymentStandPoint.position);
@@ -179,7 +178,7 @@ namespace MarketTycoon.Gameplay.AI
             }
 
             // -------------------------------------------------------------
-            // 6. Payment
+            // 6. Payment & Releasing the Queue Slot
             // -------------------------------------------------------------
             if (_targetCheckout.View != null)
             {
@@ -207,7 +206,7 @@ namespace MarketTycoon.Gameplay.AI
 
             _view.ResetLocomotion();
 
-            // Unsubscribe from queue shifts BEFORE leaving queue to avoid self-triggering
+            // Відписуємося від черги і виходимо з неї
             if (_onQueueShiftAction != null)
             {
                 _targetCheckout.OnQueueShifted -= _onQueueShiftAction;
