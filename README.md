@@ -4,6 +4,12 @@ An isometric 3D Idle Tycoon management simulation built in **Unity 6**. The play
 
 The project demonstrates production-ready software engineering standards utilizing a strict **Model-View-Controller (MVC)** architectural pattern, decoupled game systems, and an entirely native Unity stack without external plugins or third-party dependencies.
 
+### 🔮 Roadmap & Planned Features
+- [ ] **UI Polish & Animations:** Additional fluid micro-interactions and UI animations across all menus and HUD elements.
+- [ ] **Gameplay Scene UI/UX Improvements:** Enhanced layout, feedback, and user experience directly within the gameplay view.
+- [ ] **Surrounding City Environment:** 3D environment expansion outside the store perimeter, featuring city buildings, roads, and animated pedestrian AI.
+- [ ] **And much more to come...**
+
 ---
 
 ## 📸 Media & Previews
