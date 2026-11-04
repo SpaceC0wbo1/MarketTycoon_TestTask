@@ -14,6 +14,7 @@ The project demonstrates production-ready software engineering standards utilizi
 
 ## 📸 Media & Previews
 **Screenshots**:
+
 <img width="827" height="463" alt="Screenshot 2026-10-21 000324" src="https://github.com/user-attachments/assets/3c050bc3-f38d-4c73-ba2b-1bdbff239e3f" />
 
 <img width="826" height="460" alt="Screenshot 2026-10-21 000355" src="https://github.com/user-attachments/assets/add8460e-a3f6-401c-87f4-3b3cc699522d" />
